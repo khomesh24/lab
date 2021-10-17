@@ -1,0 +1,34 @@
+---
+- name: Download cirros image
+  get_url:
+    url: http://download.cirros-cloud.net/0.5.1/cirros-0.5.1-x86_64-disk.img
+    dest: cirros-0.5.1-x86_64-disk.img
+    mode: '0777'
+
+- name: upload image
+  os_image:
+    cloud: "{{ cloud_name }}"
+    name: cirros
+    container_format: bare
+    disk_format: qcow2
+    state: present
+    filename: cirros-0.5.1-x86_64-disk.img
+
+- name: create flavor
+  os_nova_flavor:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: m1-micro
+    ram: 300
+    vcpus: 1
+    disk: 1
+
+- name: launch an instance
+  os_server:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: cirros-vm
+    image: cirros
+    flavor: m1-micro
+    key_name: uc-key
+    security_groups: ssh_icmp

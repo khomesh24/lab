@@ -1,0 +1,14 @@
+---
+activationkey: <key>
+org_id: <orgid>
+cloud_name: overcloud
+ssh_public_key_file: "/home/stack/.ssh/id_rsa.pub"
+private_network_name: private
+private_subnet_name: sub-private
+private_network_cidr: "192.0.0.1/24"
+internal_network_name: internal
+internal_subnet_name: sub-internal
+internal_network_cidr: "172.0.0.1/24"
+floating_network_name: public
+floating_subnet_name: sub-public
+floating_network_cidr: "10.0.0.1/24"

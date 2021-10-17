@@ -1,0 +1,80 @@
+---
+- name: Create SSH KeyPair for stack user
+  os_keypair:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: uc-key
+    public_key_file: "{{ ssh_public_key_file }}"
+
+- name: Create security group ssh_icmp
+  os_security_group:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: ssh_icmp
+- name: Create security group rule for icmp ping
+  os_security_group_rule:
+    cloud: "{{ cloud_name }}"
+    security_group: ssh_icmp
+    protocol: icmp
+    remote_ip_prefix: 0.0.0.0/0
+- name: Create security group rule for ssh
+  os_security_group_rule:
+    cloud: "{{ cloud_name }}"
+    security_group: ssh_icmp
+    protocol: tcp
+    port_range_min: 80
+    port_range_max: 80
+    remote_ip_prefix: 0.0.0.0/0
+
+- name: Create private network
+  os_network:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: "{{ private_network_name }}"
+- name: Create sub-private subnet
+  os_subnet:
+    cloud: "{{ cloud_name }}"
+    state: present
+    network_name: "{{ private_network_name }}"
+    name: "{{ private_subnet_name }}"
+    cidr: "{{ private_network_cidr }}"
+
+- name: Create internal network
+  os_network:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: "{{ internal_network_name }}"
+- name: Create sub-internal subnet
+  os_subnet:
+    cloud: "{{ cloud_name }}"
+    state: present
+    network_name: "{{ internal_network_name }}"
+    name: "{{ internal_subnet_name }}"
+    cidr: "{{ internal_network_cidr }}"
+
+- name: Create a new external network for floating IP
+  os_network:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: "{{ floating_network_name }}"
+    provider_network_type: flat
+    provider_physical_network: datacentre
+    shared: yes
+    external: yes
+- name: Create subnet to floating IP network
+  os_subnet:
+    cloud: "{{ cloud_name }}"
+    state: present
+    network_name: "{{ floating_network_name }}"
+    name: "{{ floating_subnet_name }}"
+    cidr: "{{ floating_network_cidr }}"
+
+- name: Create a router
+  os_router:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: router1
+    network: "{{ floating_network_name }}"
+    interfaces:
+    - "{{ internal_subnet_name }}"
+    - "{{ private_subnet_name }}"

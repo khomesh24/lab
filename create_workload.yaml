@@ -1,0 +1,9 @@
+---
+- name: Playbook to create workload
+  hosts: localhost
+  vars_files:
+    - vars.yaml
+  remote_user: stack
+  tasks:
+  - name: Create cirros vm
+    include_tasks: tasks/cirros_workload.yml
