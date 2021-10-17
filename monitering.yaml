@@ -1,0 +1,68 @@
+---
+- name: Configuring monitering stack
+  hosts: mon-nodes
+  become: yes
+  tasks:
+    - name: install epel
+      package:
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: installed
+    - name: enable rhel-7-server-extras-rpms repo
+      command: subscription-manager repos --enable rhel-7-server-extras-rpms
+    - name: install packages
+      package: 
+        name: "{{ item }}"
+        state: installed
+      loop:
+        - git
+        - docker
+        - tmux
+        - python3-pip
+        - python-docker
+    - name: start and enable docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+    - name: pull grafana container
+      docker_image:
+        name: grafana/grafana
+        state: present
+    - name: run grafana container
+      docker_container:
+        name: grafana
+        image: grafana/grafana
+        state: started
+        ports:
+        - "3000:3000"
+        env:
+          GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-simple-json-datasource"
+    - name: start and enable firewalld service
+      systemd:
+        name: firewalld
+        state: started
+        enabled: yes
+    - name: All firewall rule to allow 3000
+      firewalld:
+        port: 3000/tcp
+        permanent: yes
+        immediate: true
+        state: enabled 
+    - name: pull influxdb container
+      docker_image:
+        name: khomesh24/influxdb:1.8
+        state: present
+    - name: Run influxdb containers
+      docker_container:
+        name: influxdb
+        image: khomesh24/influxdb:1.8
+        state: started
+        ports:
+        - "127.0.0.1:8086:8086"
+        - "25826:25826/udp"
+    - name: Create collectd database
+      command: curl -i -X POST http://127.0.0.1:8086/query --data-urlencode "q=CREATE DATABASE collectd"
+      register:
+    - name: debug output
+      debug:
+        var: result
