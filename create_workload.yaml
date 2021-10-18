@@ -5,5 +5,13 @@
     - vars.yaml
   remote_user: stack
   tasks:
+  - name: Create common resources
+    include_tasks: tasks/common.yml
+    tags: common
   - name: Create cirros vm
     include_tasks: tasks/cirros_workload.yml
+    tags: small_work
+  - name: Create centos vm
+    include_tasks: tasks/centos_workload.yml
+    tags: mid_work
+  
