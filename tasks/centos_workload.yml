@@ -1,0 +1,64 @@
+---
+- name: Download centos image
+  get_url:
+    url: https://cloud.centos.org/centos/8/x86_64/images/CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2
+    dest: /home/stack/CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2
+    mode: '0777'
+
+- name: upload image
+  os_image:
+    cloud: "{{ cloud_name }}"
+    name: centos8
+    container_format: bare
+    disk_format: qcow2
+    state: present
+    filename: /home/stack/CentOS-8-GenericCloud-8.1.1911-20200113.3.x86_64.qcow2
+
+- name: create flavor
+  os_nova_flavor:
+    cloud: "{{ cloud_name }}"
+    state: present
+    name: m1-mid
+    ram: 1536
+    vcpus: 2
+    disk: 12
+
+- name: launch an instance
+  os_server:
+    cloud: "{{ cloud_name }}"
+    state: present
+    network: "{{ private_network_name }}"
+    name: centos-vm-private
+    image: centos8
+    flavor: m1-mid
+    key_name: uc-key
+    security_groups: ssh_icmp
+
+- name: launch an instance in internal network
+  os_server:
+    cloud: "{{ cloud_name }}"
+    state: present
+    network: "{{ internal_network_name }}"
+    name: centos-vm-internal
+    image: centos8
+    flavor: m1-mid
+    key_name: uc-key
+    security_groups: ssh_icmp
+
+- name: Assign floating ip to cirros-vm-private
+  os_floating_ip:
+    cloud: "{{ cloud_name }}"
+    state: present
+    server: centos-vm-private
+    network: "{{ floating_network_name }}"
+    wait: true
+    reuse: true
+
+- name: Assign floating ip to cirros-vm-internal
+  os_floating_ip:
+    cloud: "{{ cloud_name }}"
+    state: present
+    server: centos-vm-internal
+    network: "{{ floating_network_name }}"
+    wait: true
+    reuse: true
