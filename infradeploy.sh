@@ -8,10 +8,11 @@ SSHKEY="$SSH_DIR/id_rsa"
 VERSION=16.1
 BUILD=passed_phase2
 LOGFILE="$BASEDIR/run.log"
-PACKAGES=(git gcc libffi-devel openssl-devel python3-virtualenv libselinux-python3 ansible)
+PACKAGES="git gcc libffi-devel openssl-devel python3-virtualenv libselinux-python3 ansible"
 IMAGE_URL=http://download.eng.pek2.redhat.com/released/RHEL-8/8.2.0/BaseOS/x86_64/images/rhel-guest-image-8.2-290.x86_64.qcow2
 NETWORK_BACKEND='geneve,vlan'
 STORAGE_BACKEND='lvm'
+EXTRA_PARAMS="-e override.undercloud.cpu=2 -e override.undercloud.memory=8024 -e override.undercloud.disks.disk1.size=40G -e override.controller.cpu=2 -e override.controller.memory=10240 -e override.compute.cpu=4 -e override.compute.memory=8024"
 set -ex
 
 if [ "$#" -ne 2 ]; then
@@ -44,10 +45,10 @@ function prep_env() {
   echo "net.ipv6.conf.all.disable_ipv6=0" > /etc/sysctl.conf
   sysctl -p
 
-  for PACKAGE in ${PACKAGES[@]}
-  do
-    yum install -y $PACKAGE
-  done
+  #for PACKAGE in ${PACKAGES[@]}
+  #do
+  yum install -y $PACKAGES
+  #done
 
   if [ -f "$SSHKEY" ]; then
     echo "ssh key exist"
@@ -78,7 +79,10 @@ function create_vms() {
     --host-key ${SSHKEY} \
     --topology-nodes ${TOPOLOGY_NODES} \
     --host-memory-overcommit True \
-    --image-url $IMAGE_URL
+    --image-url $IMAGE_URL \
+    --disk-pool=/home/images/ \
+    $EXTRA_PARAMS
+    
 }
 
 
@@ -123,7 +127,7 @@ cleanup)
 vms)
         cleanup_host
         prep_env
-        #create_vms
+        create_vms
 ;;
 uc)
         undercloud_install
@@ -134,9 +138,9 @@ oc)
 full)
         cleanup_host
         prep_env
-        #create_vms
-        #undercloud_install
-        #overcloud_deploy
+        create_vms
+        undercloud_install
+        overcloud_deploy
 ;;
 *)
         echo "please choose between cleanup|vms|uc|oc|full"
